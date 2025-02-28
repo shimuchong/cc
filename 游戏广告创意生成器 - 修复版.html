@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏广告创意生成器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --bg-gradient-start: #4f46e5;
+            --bg-gradient-end: #7e22ce;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --card-shadow: rgba(0, 0, 0, 0.1);
+            --text-primary: #f3f4f6;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --transition-speed: 0.3s;
+        }
+
+        .dark-mode {
+            --bg-gradient-start: #1e1b4b;
+            --bg-gradient-end: #4c1d95;
+            --card-bg: rgba(0, 0, 0, 0.4);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-primary);
+            background-attachment: fixed;
+            transition: background var(--transition-speed);
+        }
+
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px var(--card-shadow);
+            transition: all var(--transition-speed);
+        }
+
+        .keyword-card {
+            transition: all var(--transition-speed);
+            transform: translateZ(0);
+        }
+
+        .keyword-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .pulse-animation {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .btn {
+            @apply px-6 py-2.5 rounded-lg shadow-lg flex items-center gap-2 font-medium transition-all duration-300 transform hover:scale-[1.02];
+            background-size: 200% auto;
+            background-position: left center;
+        }
+
+        .btn:hover {
+            background-position: right center;
+        }
+
+        .btn-primary {
+            background-image: linear-gradient(to right, #6366f1 0%, #8b5cf6 50%, #6366f1 100%);
+        }
+
+        .btn-secondary {
+            background-image: linear-gradient(to right, #ec4899 0%, #f472b6 50%, #ec4899 100%);
+        }
+
+        .btn-tertiary {
+            background-image: linear-gradient(to right, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+        }
+
+        .btn-danger {
+            background-image: linear-gradient(to right, #ef4444 0%, #f87171 50%, #ef4444 100%);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+            bottom: 130%;
+        }
+
+        .badge {
+            @apply inline-flex items-center justify-center px-3 py-1 text-xs font-medium rounded-full;
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="transition-colors duration-500">
+    <button class="fixed top-5 right-5 z-10 p-2 rounded-full glass" onclick="toggleTheme()" id="themeToggle" 
+        data-tooltip="切换主题">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="themeIcon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+    </button>
+
+    <div class="container mx-auto px-4 py-8 max-w-screen-xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2">游戏广告创意生成器</h1>
+            <p class="text-xl opacity-80">从多维度关键词中获取灵感，激发你的创意</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-3">
+                <div class="glass p-6 mb-6">
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <div class="w-full lg:w-7/12">
+                            <label class="block text-sm font-medium mb-2">选择维度</label>
+                            <div class="flex flex-wrap gap-3" id="dimensionCheckboxes">
+                                <!-- 动态生成维度选择框 -->
+                            </div>
+                        </div>
+                        <div class="w-full lg:w-4/12 flex flex-col justify-between">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">每个维度词数</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="range" min="1" max="5" value="3" class="w-full" id="keywordsPerDimension" oninput="updateRangeValue('keywordsPerDimension', 'keywordsValue')">
+                                    <span id="keywordsValue" class="text-sm badge bg-indigo-600">3</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">维度数量</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="range" min="1" max="5" value="3" class="w-full" id="dimensionsCount" oninput="updateRangeValue('dimensionsCount', 'dimensionsValue')">
+                                    <span id="dimensionsValue" class="text-sm badge bg-indigo-600">3</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-3 mb-5">
+                        <button class="btn btn-primary" onclick="generateCreativity()" id="generateBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                            </svg>
+                            生成创意
+                        </button>
+                        <button class="btn btn-secondary" onclick="saveCreativity()" id="saveBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
+                            </svg>
+                            保存创意
+                        </button>
+                        <button class="btn btn-tertiary" onclick="exportCreativityHistory()" id="exportBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            导出历史
+                        </button>
+                    </div>
+
+                    <div class="flex items-center mb-5 py-2 px-4 rounded-lg bg-black bg-opacity-20" id="statusBar">
+                        <div class="loading-spinner mr-3 hidden" id="loadingSpinner"></div>
+                        <span id="statusText">等待生成...</span>
+                    </div>
+
+                    <div id="creativityOutput">
+                        <h2 class="text-xl font-bold mb-4">创意组合</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="keywordsContainer">
+                            <div class="glass p-4 rounded-lg text-center keyword-card pulse-animation">
+                                <p class="opacity-70">点击生成按钮获取创意关键词</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h2 class="text-xl font-bold mb-2">创意笔记</h2>
+                        <textarea id="creativeNotes" class="glass w-full p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 custom-scrollbar bg-black bg-opacity-10" rows="3" placeholder="根据以上关键词组合，记录你的创意灵感..."></textarea>
+                    </div>
+                </div>
+
+                <div class="glass p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <span>关键词云</span>
+                            <span class="ml-2 tooltip" data-tooltip="点击关键词添加到当前创意">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        </h2>
+                        <select id="dimensionSelect" class="glass px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 bg-black bg-opacity-50" onchange="showDimensionKeywords()">
+                            <option value="">选择维度查看关键词</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-wrap gap-2 custom-scrollbar max-h-40 overflow-y-auto p-2" id="keywordCloud">
+                        <div class="text-center py-3 opacity-70">
+                            <p>请选择一个维度查看关键词</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1">
+                <div class="glass p-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">创意历史</h2>
+                        <button onclick="clearHistory()" class="text-sm text-red-400 hover:text-red-300 tooltip" data-tooltip="清空所有历史">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="custom-scrollbar max-h-[420px] overflow-y-auto" id="historyList">
+                        <div class="text-center py-4 opacity-70">
+                            <p>暂无保存的创意</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass p-6">
+                    <h2 class="text-xl font-bold mb-4">创意统计</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">已生成创意</span>
+                            <span id="generatedCount" class="badge bg-indigo-600">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">已保存创意</span>
+                            <span id="savedCount" class="badge bg-pink-600">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">最常用维度</span>
+                            <span id="topDimension" class="badge bg-blue-600">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center opacity-70 text-sm">
+            <p>© 2025 游戏广告创意生成器 | 版本 2.0</p>
+        </div>
+    </div>
+
+    <script>
+        // 定义关键词库
+const allKeywords = {  
+    '创作形式': [  
+        '混剪', '竖卡', 'Vlog', '短视频', '直播', '条漫', '长图', '解说', '实况', '纪录',   
+        '动画', 'MV', '短剧', '快闪', '滑动', '竖屏', '横屏', '图文', '播报', '脱口秀',   
+        '纪实', '攻略解析', '角色展示', '技能演示', '开箱测评', '玩法讲解', '剧情剪辑',  
+        '游戏集锦', '特效展示', '操作教学'  
+    ],  
+    
+    '游戏玩法': [  
+        '对战', '养成', '收集', '策略', '闯关', '解密', '竞速', '卡牌', '沙盒', '生存',   
+        '塔防', '经营', 'roguelike', '回合', '即时', '开放世界', '剧情', '多人', '休闲', '放置',  
+        '横版闯关', '第一人称射击', '第三人称视角', '塔防策略', '模拟经营', '角色扮演', '动作冒险',  
+        '音乐节奏', '益智解谜', '多人在线', '团队合作', '竞技对抗', '跑酷闯关', '自走棋'  
+    ],  
+    
+    '核心卖点': [  
+        '创新玩法', '顶级画质', '特色玩法', '自由探索', '休闲社交', '竞技对抗', '福利多多', '轻松休闲',   
+        '独特建造', '剧情丰富', '实时互动', '跨服竞技', '公会战', '收集养成', '策略布局', '即时对战',  
+        '超高自由度', '精美画风', '丰富活动', '极致体验', '沉浸感', '社交互动', '多元玩法', '独创系统',  
+        '史诗剧情', '精致立绘', '动态特效', '养成进化', '极速匹配', '热血战斗'  
+    ],  
+    
+    '转化场景': [  
+        '开服首充', '公会招募', '限时活动', '排位赛季', '节日活动', '预约礼包', '豪礼排行', '福利狂欢',   
+        '限定皮肤', '抽卡扭蛋', '竞技晋级', '跨服战', '装备进阶', '充值返利', '特权礼包', '限定活动',  
+        '首日登录', '新版本上线', '周年庆典', '排行榜奖励', '签到好礼', '回归福利', '活跃奖励',  
+        '累充特权', '稀有装备', '限定道具', '精英挑战', '竞技赛事', '限时副本', '联动合作'  
+    ],  
+    
+    '结构框架': [  
+        '前贴', '后贴', '倒叙', '递进', '闭环', 'AB面', '三段式', '悬念', '反转', '拼贴',   
+        '穿插', '平行', '环形', '解构', '碎片', '多线', '嵌套', '双线', '交叉', '递归',   
+        '爆点递进', '高潮迭代', '对比呈现', '平行叙事', '开放式结尾', '镜像结构', '渐进式',  
+        '引导式', '环形叙事', '折叠结构'  
+    ],  
+    
+    '节奏模式': [  
+        '快切', '慢放', '定格', '蒙太奇', '跳切', '渐进', '爆发', '起伏', '循环', '断点',   
+        '重复', '韵律', '节奏', '停顿', '层叠', '递增', '爆点', '波浪', '疾缓', '抑扬',   
+        '连招展示', '暴击特写', '高速切换', '快慢结合', '节奏变化', '戏剧性暂停', '重复强调',  
+        '连贯流程', '断点重启', '峰值震撼'  
+    ],  
+    
+    '叙事视角': [  
+        '第一人称', '旁白', '解说', '无声', '多线', '独白', '对话', '回忆', '现场', '复盘',   
+        '全知', '限知', '主观', '客观', '俯瞰', '代入', '穿越', '重叠', '分裂', '观察者',   
+        '玩家视角', '角色视角', '战斗视角', '旁观者', '跟随镜头', '神之视角', '沉浸式',  
+        '多角度切换', '视角转换', '局内局外'  
+    ],  
+    
+    '情感触发': [  
+        '爽点', '共鸣', '反转', '悬念', '惊喜', '紧张', '解压', '怀旧', '温情', '冲突',   
+        '期待', '共情', '震撼', '治愈', '焦虑', '兴奋', '愤怒', '同理', '释放', '感动',   
+        '胜利喜悦', '成就感', '连击快感', '战胜挫折', '收集满足', '突破自我', '解锁惊喜',  
+        '稀有获取', '竞技荣耀', '团队配合'  
+    ],  
+    
+    '内容类型': [  
+        '教程', '攻略', '评测', '开箱', '安利', '吐槽', '解说', '剧情', '实况', '测评',   
+        '玩法', '技巧', '心得', '盘点', '测试', '探索', '优化', '分析', '预测', '总结',   
+        '版本解析', '角色分析', '对比测评', '升级指南', '阵容搭配', '技能解析', '装备推荐',  
+        '新手教学', '高阶技巧', '趣味玩法'  
+    ],  
+    
+    '视觉语言': [  
+        '分屏', '转场', '特写', '航拍', '延时', '抖动', '虚焦', '叠化', '手绘', '像素',   
+        '赛博', '复古', '极简', '写实', '长焦', '广角', '移轴', '逆光', '剪影', '慢动作',   
+        '特效爆炸', '连招特写', '时间停滞', '画面撕裂', '色彩爆炸', '流畅切换', '跟随镜头',  
+        '震撼特效', '视觉冲击', '光影变化'  
+    ],  
+    
+    '画面元素': [  
+        '字幕', '贴纸', '表情', '特效', '滤镜', '标注', '图解', '封面', '边框', '弹窗',   
+        'UI', '动效', '图标', '装饰', '水印', '遮罩', '光效', '描边', '粒子', '纹理',   
+        '伤害数值', '等级图标', '血条显示', '技能冷却', '技能图标', '暴击特效', '连击计数',  
+        '奖励展示', '成就弹窗', '拾取提示'  
+    ],  
+    
+    '声音元素': [  
+        '配音', '音效', 'BGM', '环音', '现场音', '语音', '默片', '音乐', '节奏', '音调',   
+        '语气', '语速', '音量', '混音', '氛围', '环境音', '动效音', '转场音', '音高', '回声',   
+        '技能音效', '击打音效', '连击声', '战斗配乐', '胜利音效', '失败提示', '升级音效',  
+        '解锁提示', '奖励音效', '场景音效'  
+    ],  
+    
+    '互动机制': [  
+        '弹幕', '投票', '打卡', '接龙', '挑战', '话题', '热点', '互动', '共创', '联动',   
+        '串场', '梗玩', '问答', '抽奖', '游戏', '测试', '排行', 'PK', '评论', '分享',   
+        '预约', '礼包码', '扫码登录', '一键安装', '关注领礼', '转发抽奖', '直播互动',  
+        '在线助力', '福利兑换', '签到打卡'  
+    ],  
+    
+    '创新手法': [  
+        '跨界', '拟人', '拆解', '还原', '重构', '融合', '解构', '夸张', '对比', '隐喻',   
+        '象征', '移情', '反讽', '戏仿', '换位', '混搭', '致敬', '颠覆', '重组', '二次创作',   
+        '玩法创新', '反常规', '视角转换', '元素融合', '风格混搭', '跨媒介', '多元表达',  
+        '传统与现代', '文化碰撞', '圈层破壁'  
+    ],  
+    
+    '社交机制': [  
+        '组队', '公会', '跨服', '好友', '联盟', '排名', '竞技', '团战', '协作', 'PK',   
+        '帮派', '结盟', '约战', '切磋', '助力', '支援', '带新', '工会', '极限', '排位',  
+        '跨服组队', '帮会活动', '盟友系统', '战队配合', '实时语音', '公会副本', '公会战',  
+        '联盟对抗', '社交送礼', '好友互助'  
+    ],  
+    
+    '用户诉求': [  
+        '养成', '竞技', '收集', '探索', '社交', '创造', '支配', '打发时间', '释放压力', '获得成就',   
+        '展示实力', '结交朋友', '追求完美', '获得认同', '心流体验', '自我展示', '情感满足',  
+        '沉浸感受', '挑战自我', '逃避现实', '解决无聊', '寻求刺激', '享受乐趣', '成长感',  
+        '归属感', '掌控感', '成就感', '探索欲', '收藏欲', '竞争心'  
+    ],  
+    
+    '变现形式': [  
+        '首充', '皮肤', '月卡', '礼包', '抽卡', '直充', '特权', '加速', '等级', '装备',   
+        '战力', '体力', '金币', '钻石', '特效', '称号', '成长基金', '累充返利', '每日礼包',  
+        '周卡', '季卡', '限定道具', '稀有装备', '珍稀时装', '坐骑宠物', '武器皮肤',  
+        '角色立绘', '充值优惠', '回购福利', '折扣特惠'  
+    ],  
+    
+    '平台特性': [  
+        '直拍', '横拍', '信息流', '封面', '橱窗', '标签', '挂件', '礼物', '直播', '短视频',   
+        '专栏', '合集', '话题', '挑战', '活动', '趋势', '榜单', '直播间', '预约', '下载',  
+        '网页活动', '应用内推送', '平台活动', '渠道专属', '专题页面', '快捷入口',  
+        '热搜推荐', '广告位', '搜索优化', '平台奖励'  
+    ],  
+    
+    '创意来源': [  
+        '生活', '观察', '联想', '灵感', '借鉴', '模仿', '改编', '融合', '突破', '实验',   
+        '对比', '类比', '演绎', '归纳', '抽象', '具象', '换位', '游戏梗', '竞技场景', '养成过程',  
+        '玩家反馈', '热点事件', '文化元素', '流行趋势', '游戏世界观', '角色背景',  
+        '游戏故事', '玩家行为', '市场分析', '竞品研究'  
+    ],  
+    
+    '受众心理': [  
+        '好奇', '焦虑', '炫耀', '从众', '攀比', '收集', '探索', '完美', '统治', '解压',   
+        '认同', '归属', '优越', '自尊', '逃避', '补偿', '胜负欲', '完美主义', '成就动机',  
+        '社交需求', '自我展示', '收藏欲望', '竞争心理', '稀缺心理', '紧迫感', '即时满足',  
+        '期待惊喜', '新鲜刺激', '认可需求', '逃避现实'  
+    ]  
+};
+
+        // 全局状态管理
+        const appState = {
+            isDarkMode: localStorage.getItem('darkMode') === 'true',
+            creativityHistory: [],
+            generatedCount: 0,
+            dimensionStats: {},
+            currentCreativity: null,
+            isGenerating: false,
+            errorCount: 0
+        };
+
+        // DOM 缓存
+        const domElements = {};
+
+        // 应用初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            cacheDOM();
+            loadDataFromStorage();
+            initializeUI();
+            updateStatistics();
+            renderHistory();
+            applyTheme();
+        });
+
+        // 缓存DOM元素，减少查询
+        function cacheDOM() {
+            const ids = [
+                'generateBtn', 'saveBtn', 'exportBtn', 'loadingSpinner', 'statusText', 'keywordsContainer',
+                'dimensionCheckboxes', 'dimensionSelect', 'keywordCloud', 'creativeNotes', 'historyList',
+                'generatedCount', 'savedCount', 'topDimension', 'keywordsPerDimension', 'dimensionsCount',
+                'keywordsValue', 'dimensionsValue', 'statusBar', 'themeToggle', 'themeIcon'
+            ];
+            
+            ids.forEach(id => {
+                domElements[id] = document.getElementById(id);
+            });
+        }
+
+        // 从本地存储加载数据
+        function loadDataFromStorage() {
+            try {
+                appState.creativityHistory = JSON.parse(localStorage.getItem('creativityHistory')) || [];
+                appState.generatedCount = parseInt(localStorage.getItem('generatedCount')) || 0;
+                appState.dimensionStats = JSON.parse(localStorage.getItem('dimensionStats')) || {};
+            } catch (error) {
+                console.error('加载本地存储数据失败:', error);
+                showNotification('加载数据失败，将使用默认设置', 'error');
+                appState.creativityHistory = [];
+                appState.generatedCount = 0;
+                appState.dimensionStats = {};
+            }
+        }
+
+        // 初始化UI元素
+        function initializeUI() {
+            // 动态生成维度选择框
+            const fragment = document.createDocumentFragment();
+            
+            Object.keys(allKeywords).forEach(dimension => {
+                // 添加维度复选框
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'flex items-center';
+                
+                const checkboxId = `dimension-${dimension}`;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = checkboxId;
+                checkbox.value = dimension;
+                checkbox.className = 'mr-1.5 cursor-pointer';
+                checkbox.checked = true;
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkboxId;
+                label.className = 'text-sm cursor-pointer';
+                label.textContent = dimension;
+                
+                checkboxDiv.appendChild(checkbox);
+                checkboxDiv.appendChild(label);
+                fragment.appendChild(checkboxDiv);
+                
+                // 添加维度选择下拉选项
+                const option = document.createElement('option');
+                option.value = dimension;
+                option.textContent = dimension;
+                domElements.dimensionSelect.appendChild(option);
+            });
+            
+            domElements.dimensionCheckboxes.appendChild(fragment);
+
+            // 添加错误监听和恢复机制
+            window.addEventListener('error', handleGlobalError);
+        }
+
+        // 处理全局错误
+        function handleGlobalError(event) {
+            console.error('捕获到错误:', event.error);
+            appState.errorCount++;
+            
+            if (appState.isGenerating) {
+                appState.isGenerating = false;
+                hideLoadingState();
+                showNotification('生成过程中发生错误，已恢复', 'error');
+            }
+            
+            // 如果错误频繁，提供重置选项
+            if (appState.errorCount > 3) {
+                if (confirm('应用似乎遇到了问题。是否重置应用状态？\n(这将保留你的历史记录，但会清除当前状态)')) {
+                    resetAppState();
+                }
+                appState.errorCount = 0;
+            }
+            
+            return false;
+        }
+
+        // 重置应用状态
+        function resetAppState() {
+            appState.currentCreativity = null;
+            appState.isGenerating = false;
+            hideLoadingState();
+            showDefaultCreativityOutput();
+            showNotification('应用状态已重置', 'info');
+        }
+
+        // 显示默认的创意输出
+        function showDefaultCreativityOutput() {
+            domElements.keywordsContainer.innerHTML = `
+                <div class="glass p-4 rounded-lg text-center keyword-card">
+                    <p class="opacity-70">点击生成按钮获取创意关键词</p>
+                </div>
+            `;
+        }
+
+        // 更新range输入框的值
+        function updateRangeValue(inputId, valueId) {
+            const input = document.getElementById(inputId);
+            const valueEl = document.getElementById(valueId);
+            if (input && valueEl) {
+                valueEl.textContent = input.value;
+            }
+        }
+
+        // 显示加载状态
+        function showLoadingState() {
+            domElements.loadingSpinner.classList.remove('hidden');
+            domElements.generateBtn.disabled = true;
+            domElements.statusText.textContent = '正在生成...';
+            domElements.statusBar.classList.add('bg-indigo-900', 'bg-opacity-30');
+            domElements.statusBar.classList.remove('bg-black', 'bg-opacity-20');
+        }
+
+        // 隐藏加载状态
+        function hideLoadingState() {
+            domElements.loadingSpinner.classList.add('hidden');
+            domElements.generateBtn.disabled = false;
+            domElements.statusBar.classList.remove('bg-indigo-900', 'bg-opacity-30');
+            domElements.statusBar.classList.add('bg-black', 'bg-opacity-20');
+        }
+
+        // 生成创意
+        function generateCreativity() {
+            try {
+                if (appState.isGenerating) return;
+                appState.isGenerating = true;
+                
+                showLoadingState();
+                
+                // 获取选中的维度
+                const selectedDimensions = [];
+                Object.keys(allKeywords).forEach(dimension => {
+                    const checkbox = document.getElementById(`dimension-${dimension}`);
+                    if (checkbox && checkbox.checked) {
+                        selectedDimensions.push(dimension);
+                    }
+                });
+                
+                // 如果没有选中维度，显示错误并返回
+                if (selectedDimensions.length === 0) {
+                    hideLoadingState();
+                    appState.isGenerating = false;
+                    showNotification('请至少选择一个维度', 'error');
+                    return;
+                }
+                
+                // 获取维度数量和关键词数量
+                const dimensionsCount = Math.min(parseInt(domElements.dimensionsCount.value), selectedDimensions.length);
+                const keywordsPerDimension = parseInt(domElements.keywordsPerDimension.value);
+                
+                // 使用 Web Worker 进行数据处理
+                if (window.Worker) {
+                    const workerCode = `
+                        self.onmessage = function(e) {
+                            const { selectedDimensions, dimensionsCount, keywordsPerDimension, allKeywords } = e.data;
+                            
+                            // 随机选择维度
+                            const shuffled = [...selectedDimensions].sort(() => 0.5 - Math.random());
+                            const randomDimensions = shuffled.slice(0, dimensionsCount);
+                            
+                            // 生成创意关键词
+                            const result = {};
+                            randomDimensions.forEach(dimension => {
+                                const dimensionKeywords = allKeywords[dimension];
+                                const shuffledKeywords = [...dimensionKeywords].sort(() => 0.5 - Math.random());
+                                result[dimension] = shuffledKeywords.slice(0, keywordsPerDimension);
+                            });
+                            
+                            self.postMessage(result);
+                        };
+                    `;
+                    
+                    const blob = new Blob([workerCode], { type: 'application/javascript' });
+                    const worker = new Worker(URL.createObjectURL(blob));
+                    
+                    worker.onmessage = function(e) {
+                        displayResults(e.data);
+                        updateStats(Object.keys(e.data));
+                        appState.isGenerating = false;
+                        hideLoadingState();
+                        showNotification('创意已生成', 'success');
+                        
+                        appState.generatedCount++;
+                        localStorage.setItem('generatedCount', appState.generatedCount);
+                        updateStatistics();
+                        
+                        worker.terminate();
+                    };
+                    
+                    worker.onerror = function(error) {
+                        console.error('Worker 错误:', error);
+                        appState.isGenerating = false;
+                        hideLoadingState();
+                        showNotification('生成过程中发生错误', 'error');
+                        worker.terminate();
+                    };
+                    
+                    worker.postMessage({
+                        selectedDimensions,
+                        dimensionsCount,
+                        keywordsPerDimension,
+                        allKeywords
+                    });
+                } else {
+                    // 浏览器不支持 Web Worker，使用同步方式
+                    setTimeout(() => {
+                        // 随机选择维度
+                        const randomDimensions = getRandomElements(selectedDimensions, dimensionsCount);
+                        
+                        // 生成创意关键词
+                        const result = {};
+                        randomDimensions.forEach(dimension => {
+                            result[dimension] = getRandomElements(allKeywords[dimension], keywordsPerDimension);
+                        });
+                        
+                        displayResults(result);
+                        updateStats(Object.keys(result));
+                        appState.isGenerating = false;
+                        hideLoadingState();
+                        showNotification('创意已生成', 'success');
+                        
+                        appState.generatedCount++;
+                        localStorage.setItem('generatedCount', appState.generatedCount);
+                        updateStatistics();
+                    }, 300);
+                }
+            } catch (error) {
+                console.error('生成创意时出错:', error);
+                appState.isGenerating = false;
+                hideLoadingState();
+                showNotification('生成过程中发生错误', 'error');
+            }
+        }
+
+        // 随机选择元素
+        function getRandomElements(arr, count) {
+            const shuffled = [...arr].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        // 展示结果
+        function displayResults(results) {
+            try {
+                if (!results || Object.keys(results).length === 0) {
+                    showNotification('生成结果为空', 'warning');
+                    return;
+                }
+                
+                const fragment = document.createDocumentFragment();
+                appState.currentCreativity = results;
+                
+                Object.keys(results).forEach(dimension => {
+                    const dimensionDiv = document.createElement('div');
+                    dimensionDiv.className = 'glass keyword-card p-4 rounded-lg';
+                    
+                    const dimensionTitle = document.createElement('div');
+                    dimensionTitle.className = 'font-bold mb-3 text-center';
+                    dimensionTitle.textContent = dimension;
+                    
+                    const keywordsList = document.createElement('ul');
+                    keywordsList.className = 'space-y-2';
+                    
+                    results[dimension].forEach(keyword => {
+                        const keywordItem = document.createElement('li');
+                        keywordItem.className = 'text-center py-1.5 px-2 rounded bg-white bg-opacity-10 hover:bg-opacity-20 transition-all';
+                        keywordItem.textContent = keyword;
+                        keywordsList.appendChild(keywordItem);
+                    });
+                    
+                    dimensionDiv.appendChild(dimensionTitle);
+                    dimensionDiv.appendChild(keywordsList);
+                    fragment.appendChild(dimensionDiv);
+                });
+                
+                // 使用 DocumentFragment 一次性更新 DOM
+                domElements.keywordsContainer.innerHTML = '';
+                domElements.keywordsContainer.appendChild(fragment);
+                
+                // 移除加载动画
+                const cards = domElements.keywordsContainer.querySelectorAll('.keyword-card');
+                cards.forEach(card => {
+                    card.classList.remove('pulse-animation');
+                });
+            } catch (error) {
+                console.error('显示结果时出错:', error);
+                showNotification('显示结果时发生错误', 'error');
+            }
+        }
+
+        // 显示某个维度的所有关键词
+        function showDimensionKeywords() {
+            try {
+                const dimension = domElements.dimensionSelect.value;
+                domElements.keywordCloud.innerHTML = '';
+                
+                if (!dimension) {
+                    domElements.keywordCloud.innerHTML = `
+                        <div class="text-center py-3 opacity-70 w-full">
+                            <p>请选择一个维度查看关键词</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 使用DocumentFragment提高性能
+                const fragment = document.createDocumentFragment();
+                
+                allKeywords[dimension].forEach(keyword => {
+                    const keywordSpan = document.createElement('span');
+                    keywordSpan.className = 'bg-white bg-opacity-10 px-3 py-1.5 rounded-full text-sm cursor-pointer hover:bg-opacity-20 transition-all';
+                    keywordSpan.textContent = keyword;
+                    keywordSpan.onclick = () => addKeywordToCreativity(dimension, keyword);
+                    fragment.appendChild(keywordSpan);
+                });
+                
+                domElements.keywordCloud.appendChild(fragment);
+            } catch (error) {
+                console.error('显示维度关键词时出错:', error);
+                showNotification('加载关键词时发生错误', 'error');
+            }
+        }
+
+        // 添加关键词到当前创意
+        function addKeywordToCreativity(dimension, keyword) {
+            try {
+                if (!appState.currentCreativity) {
+                    appState.currentCreativity = {};
+                }
+                
+                if (!appState.currentCreativity[dimension]) {
+                    appState.currentCreativity[dimension] = [];
+                }
+                
+                // 检查是否已存在相同关键词
+                if (!appState.currentCreativity[dimension].includes(keyword)) {
+                    appState.currentCreativity[dimension].push(keyword);
+                    displayResults(appState.currentCreativity);
+                    showNotification(`已添加 "${keyword}" 到 ${dimension}`, 'success');
+                } else {
+                    showNotification(`"${keyword}" 已存在于 ${dimension}`, 'info');
+                }
+            } catch (error) {
+                console.error('添加关键词时出错:', error);
+                showNotification('添加关键词时发生错误', 'error');
+            }
+        }
+
+        // 保存当前创意
+        function saveCreativity() {
+            try {
+                if (!appState.currentCreativity || Object.keys(appState.currentCreativity).length === 0) {
+                    showNotification('没有可保存的创意', 'warning');
+                    return;
+                }
+                
+                const timestamp = new Date().toLocaleString();
+                const notes = domElements.creativeNotes.value.trim() || '';
+                
+                const creativityEntry = {
+                    id: Date.now(),
+                    timestamp: timestamp,
+                    creativity: appState.currentCreativity,
+                    notes: notes
+                };
+                
+                appState.creativityHistory.unshift(creativityEntry);
+                saveToLocalStorage('creativityHistory', appState.creativityHistory);
+                
+                showNotification('创意已保存', 'success');
+                renderHistory();
+                updateStatistics();
+            } catch (error) {
+                console.error('保存创意时出错:', error);
+                showNotification('保存创意时发生错误', 'error');
+            }
+        }
+
+        // 保存数据到本地存储
+        function saveToLocalStorage(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+                return true;
+            } catch (error) {
+                console.error(`保存到本地存储失败 (${key}):`, error);
+                showNotification('保存数据失败', 'error');
+                return false;
+            }
+        }
+
+        // 渲染历史记录
+        function renderHistory() {
+            try {
+                domElements.historyList.innerHTML = '';
+                
+                if (appState.creativityHistory.length === 0) {
+                    domElements.historyList.innerHTML = `
+                        <div class="text-center py-4 opacity-70">
+                            <p>暂无保存的创意</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 使用DocumentFragment提高性能
+                const fragment = document.createDocumentFragment();
+                
+                appState.creativityHistory.forEach(entry => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'p-3 mb-2 bg-white bg-opacity-5 hover:bg-opacity-10 rounded transition-all';
+                    
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-center mb-2';
+                    
+                    const timestamp = document.createElement('div');
+                    timestamp.className = 'text-xs opacity-70';
+                    timestamp.textContent = entry.timestamp;
+                    
+                    const actions = document.createElement('div');
+                    actions.className = 'flex space-x-2';
+                    
+                    const loadButton = document.createElement('button');
+                    loadButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>';
+                    loadButton.className = 'text-blue-400 hover:text-blue-300';
+                    loadButton.onclick = () => loadCreativity(entry);
+                    
+                    const deleteButton = document.createElement('button');
+                    deleteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>';
+                    deleteButton.className = 'text-red-400 hover:text-red-300';
+                    deleteButton.onclick = () => deleteCreativity(entry.id);
+                    
+                    actions.appendChild(loadButton);
+                    actions.appendChild(deleteButton);
+                    
+                    header.appendChild(timestamp);
+                    header.appendChild(actions);
+                    
+                    const content = document.createElement('div');
+                    content.className = 'text-xs';
+                    
+                    const dimensionsList = Object.keys(entry.creativity).map(dimension => {
+                        return `<span class="font-semibold">${dimension}</span>: ${entry.creativity[dimension].join(', ')}`;
+                    }).join('<br>');
+                    
+                    content.innerHTML = dimensionsList;
+                    
+                    if (entry.notes) {
+                        const notesDiv = document.createElement('div');
+                        notesDiv.className = 'mt-2 pt-2 border-t border-white border-opacity-10 text-xs italic opacity-70';
+                        notesDiv.textContent = entry.notes;
+                        content.appendChild(notesDiv);
+                    }
+                    
+                    historyItem.appendChild(header);
+                    historyItem.appendChild(content);
+                    fragment.appendChild(historyItem);
+                });
+                
+                domElements.historyList.appendChild(fragment);
+            } catch (error) {
+                console.error('渲染历史记录时出错:', error);
+                showNotification('加载历史记录时发生错误', 'error');
+            }
+        }
+
+        // 加载历史创意
+        function loadCreativity(entry) {
+            try {
+                if (!entry || !entry.creativity) {
+                    showNotification('无法加载创意', 'error');
+                    return;
+                }
+                
+                appState.currentCreativity = entry.creativity;
+                displayResults(appState.currentCreativity);
+                domElements.creativeNotes.value = entry.notes || '';
+                showNotification('已加载历史创意', 'success');
+            } catch (error) {
+                console.error('加载创意时出错:', error);
+                showNotification('加载创意时发生错误', 'error');
+            }
+        }
+
+        // 删除历史创意
+        function deleteCreativity(id) {
+            try {
+                appState.creativityHistory = appState.creativityHistory.filter(entry => entry.id !== id);
+                saveToLocalStorage('creativityHistory', appState.creativityHistory);
+                renderHistory();
+                updateStatistics();
+                showNotification('已删除历史创意', 'info');
+            } catch (error) {
+                console.error('删除创意时出错:', error);
+                showNotification('删除创意时发生错误', 'error');
+            }
+        }
+
+        // 清空全部历史
+        function clearHistory() {
+            try {
+                if (!appState.creativityHistory.length) {
+                    showNotification('没有历史记录可清空', 'info');
+                    return;
+                }
+                
+                if (confirm('确定要清空所有历史记录吗？此操作不可撤销。')) {
+                    appState.creativityHistory = [];
+                    saveToLocalStorage('creativityHistory', []);
+                    renderHistory();
+                    updateStatistics();
+                    showNotification('已清空所有历史记录', 'info');
+                }
+            } catch (error) {
+                console.error('清空历史时出错:', error);
+                showNotification('清空历史时发生错误', 'error');
+            }
+        }
+
+        // 导出历史记录为JSON文件
+        function exportCreativityHistory() {
+            try {
+                if (appState.creativityHistory.length === 0) {
+                    showNotification('没有可导出的历史记录', 'warning');
+                    return;
+                }
+                
+                const dataStr = JSON.stringify(appState.creativityHistory, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileName = `游戏广告创意历史_${new Date().toISOString().slice(0, 10)}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileName);
+                linkElement.click();
+                
+                showNotification('历史记录已导出', 'success');
+            } catch (error) {
+                console.error('导出历史时出错:', error);
+                showNotification('导出历史时发生错误', 'error');
+            }
+        }
+
+        // 切换暗色/亮色主题
+        function toggleTheme() {
+            try {
+                appState.isDarkMode = !appState.isDarkMode;
+                document.body.classList.toggle('dark-mode');
+                
+                if (appState.isDarkMode) {
+                    domElements.themeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />';
+                    domElements.themeToggle.dataset.tooltip = '切换到亮色模式';
+                } else {
+                    domElements.themeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
+                    domElements.themeToggle.dataset.tooltip = '切换到暗色模式';
+                }
+                
+                saveToLocalStorage('darkMode', appState.isDarkMode);
+                showNotification(appState.isDarkMode ? '已切换到暗色模式' : '已切换到亮色模式', 'info');
+            } catch (error) {
+                console.error('切换主题时出错:', error);
+                showNotification('切换主题时发生错误', 'error');
+            }
+        }
+
+        // 应用主题
+        function applyTheme() {
+            if (appState.isDarkMode) {
+                document.body.classList.add('dark-mode');
+                domElements.themeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />';
+                domElements.themeToggle.dataset.tooltip = '切换到亮色模式';
+            } else {
+                document.body.classList.remove('dark-mode');
+                domElements.themeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
+                domElements.themeToggle.dataset.tooltip = '切换到暗色模式';
+            }
+        }
+
+        // 更新维度使用统计
+        function updateStats(dimensions) {
+            if (!dimensions || !dimensions.length) return;
+            
+            dimensions.forEach(dimension => {
+                if (!appState.dimensionStats[dimension]) {
+                    appState.dimensionStats[dimension] = 0;
+                }
+                appState.dimensionStats[dimension]++;
+            });
+            
+            saveToLocalStorage('dimensionStats', appState.dimensionStats);
+            updateStatistics();
+        }
+
+        // 更新统计数据显示
+        function updateStatistics() {
+            domElements.generatedCount.textContent = appState.generatedCount;
+            domElements.savedCount.textContent = appState.creativityHistory.length;
+            
+            // 计算最常用维度
+            let topDimension = '-';
+            let maxCount = 0;
+            
+            for (const dimension in appState.dimensionStats) {
+                if (appState.dimensionStats[dimension] > maxCount) {
+                    maxCount = appState.dimensionStats[dimension];
+                    topDimension = dimension;
+                }
+            }
+            
+            domElements.topDimension.textContent = topDimension;
+        }
+
+        // 显示通知消息
+        function showNotification(message, type = 'info') {
+            const statusText = domElements.statusText;
+            let className = '';
+            
+            switch (type) {
+                case 'success':
+                    className = 'text-green-300';
+                    break;
+                case 'error':
+                    className = 'text-red-300';
+                    break;
+                case 'warning':
+                    className = 'text-yellow-300';
+                    break;
+                case 'info':
+                default:
+                    className = 'text-blue-300';
+            }
+            
+            statusText.className = className;
+            statusText.textContent = message;
+            
+            // 5秒后恢复默认状态
+            setTimeout(() => {
+                if (appState.isGenerating) return;
+                statusText.className = '';
+                statusText.textContent = '等待生成...';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
